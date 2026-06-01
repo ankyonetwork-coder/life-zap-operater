@@ -238,7 +238,7 @@
 
         try {
             let foundVideo = null;
-            for (let attempts = 0; attempts < 6; attempts++) {
+            for (let attempts = 0; attempts < 1; attempts++) {
                 const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=${generateRandomQuery()}&type=video&order=date&key=${API_KEY}`);
                 if (!searchRes.ok) throw new Error("検索に失敗しました");
                 const searchData = await searchRes.json();
