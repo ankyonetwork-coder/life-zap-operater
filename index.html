@@ -109,4 +109,176 @@
         }
         
         /* 見出し「concept」のスタイル（本文より大きく） */
-        .concept
+        .concept-heading {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .description-panel p {
+            margin: 0 0 15px 0;
+        }
+
+        /* 最後の「暗渠Network」とGIF画像のスタイル */
+        .signature-area {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 30px;
+            gap: 10px;
+            /* スマホ幅でも絶対に改行させない処理 */
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        .signature-text {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .signature-gif {
+            height: 12em; 
+            width: auto;
+            max-width: 50vw; 
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
+
+    <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
+
+    <div class="video-wrapper" id="player-container">
+        <div class="shield"></div>
+        <div id="player" class="w-full h-full"></div>
+    </div>
+
+    <div class="info-panel">
+        <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
+        <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
+    </div>
+
+    <button id="search-btn" onclick="findRandomVideo()">next life</button>
+    <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
+
+    <div class="description-panel">
+        <div class="concept-heading">concept</div>
+        
+        <p>
+            このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
+        </p>
+        <p>
+            それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
+        </p>
+        <p>
+            普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
+        </p>
+        <p>
+            車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
+        </p>
+
+        <div class="signature-area">
+            <span class="signature-text">暗渠Network</span>
+            <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
+        </div>
+    </div>
+
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    // ★ ここに新しいAPIキーを入れてください ★
+    const API_KEY = 'ここに新しいAPIキーを貼り付けてください'; 
+    
+    let player;
+    let isPlayerReady = false;
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: '',
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0, // 操作バーを非表示
+                'disablekb': 1,
+                'modestbranding': 1,
+                'rel': 0,
+                'playsinline': 1
+            },
+            events: {
+                'onReady': () => isPlayerReady = true
+            }
+        });
+    }
+
+    function generateRandomQuery() {
+        const prefixes = ['IMG', 'DSC', 'MVI', 'MOV', 'VID', 'SANY'];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const num = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        return `${prefix}_${num}`;
+    }
+
+    async function findRandomVideo() {
+        const btn = document.getElementById('search-btn');
+        const msg = document.getElementById('error-msg');
+        
+        btn.disabled = true;
+        btn.textContent = "Searching...";
+        msg.textContent = "";
+        
+        // 検索中はテキストをリセット
+        document.getElementById('video-title').textContent = "";
+        document.getElementById('video-stats').textContent = "";
+
+        try {
+            let foundVideo = null;
+            // ★ ここを 6 から 1 に変更しました（ポイント節約） ★
+            for (let attempts = 0; attempts < 1; attempts++) {
+                const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=${generateRandomQuery()}&type=video&order=date&key=${API_KEY}`);
+                if (!searchRes.ok) throw new Error("検索に失敗しました");
+                const searchData = await searchRes.json();
+                
+                if (!searchData.items || searchData.items.length === 0) continue;
+                
+                const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+                const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,status,snippet&id=${videoIds}&key=${API_KEY}`);
+                const statsData = await statsRes.json();
+
+                const lowViewVideos = statsData.items.filter(item => {
+                    return item.statistics && item.status && parseInt(item.statistics.viewCount) < 100 && item.status.embeddable;
+                });
+
+                if (lowViewVideos.length > 0) {
+                    foundVideo = lowViewVideos[Math.floor(Math.random() * lowViewVideos.length)];
+                    break;
+                }
+            }
+
+            if (foundVideo) {
+                document.getElementById('video-title').textContent = foundVideo.snippet.title;
+                document.getElementById('video-stats').textContent = `再生回数: ${foundVideo.statistics.viewCount} 回`;
+                
+                if (isPlayerReady) {
+                    player.loadVideoById(foundVideo.id);
+                }
+            } else {
+                msg.textContent = "動画が見つかりませんでした。";
+            }
+        } catch (error) {
+            msg.textContent = `エラーが発生しました。設定を確認してください。`;
+            console.error(error);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "next life";
+        }
+    }
+</script>
+</body>
+</html>
