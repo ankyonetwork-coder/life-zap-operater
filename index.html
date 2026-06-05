@@ -269,14 +269,14 @@
                     player.loadVideoById(foundVideo.id);
                 }
             } else {
-                msg.textContent = "動画が見つかりませんでした。";
+                msg.textContent = "記憶が見つかりませんでした。";
             }
         } catch (error) {
-            msg.textContent = `エラーが発生しました。設定を確認してください。`;
+            msg.textContent = `他人の記憶の見過ぎは危険です。自分の人生を見つめましょう。`;
             console.error(error);
         } finally {
             btn.disabled = false;
-            btn.textContent = "next life";
+            btn.textContent = "next memories";
         }
     }
 </script>
