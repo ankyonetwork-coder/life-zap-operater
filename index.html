@@ -25,14 +25,14 @@
         .container {
             width: 100%;
             max-width: 600px;
-            filter: url('#water-ripple-filter'); /* SVG水面波紋フィルター */
+            filter: url('#water-3d-filter'); /* 立体水面フィルター */
             will-change: filter;
             position: relative;
             z-index: 1;
         }
         
-        /* 波紋が光を受けてうっすら輝く反射レイヤー */
-        #water-light-layer {
+        /* 水面のハイライト・立体光沢レイヤー */
+        #water-shading-layer {
             position: fixed;
             top: 0;
             left: 0;
@@ -40,10 +40,9 @@
             height: 100vh;
             pointer-events: none;
             z-index: 9999;
-            /* SVGの波紋と同じグラデーション構造で光の反射を作る */
-            filter: url('#water-ripple-filter');
-            mix-blend-mode: color-dodge; /* 波の凸部分だけが光を受ける合成モード */
-            opacity: 0.4; /* 光の反射の強さ */
+            filter: url('#water-lighting-only');
+            mix-blend-mode: screen; /* ハイライトを自然に水面に載せる */
+            opacity: 0.7;
         }
 
         .page-logo {
@@ -166,7 +165,7 @@
             object-fit: contain;
         }
 
-        /* 水面の波紋の光を描写するキャンバス */
+        /* 波紋を描写する非表示キャンバス */
         #ripple-canvas {
             position: fixed;
             top: 0;
@@ -174,29 +173,46 @@
             width: 100vw;
             height: 100vh;
             pointer-events: none;
-            display: none; /* フィルターのソースとしてのみ使用 */
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<!-- 波紋を描く非表示キャンバス -->
 <canvas id="ripple-canvas"></canvas>
 
-<!-- 波紋を水面の歪み・波として反映させるSVGフィルター -->
+<!-- 立体感（歪み＋光と影）を生み出すSVGフィルター定義 -->
 <svg style="display:none;">
   <defs>
-    <filter id="water-ripple-filter" x="-30%" y="-30%" width="160%" height="160%">
-      <!-- キャンバスの波紋画像を元に水面をゆがめる -->
-      <feImage id="fe-image" result="rippleMap" />
-      <!-- 水面のうねりと屈折（巨大な波紋に対応） -->
-      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="35" xChannelSelector="R" yChannelSelector="G" />
+    <!-- 全体の屈折＆陰影フィルター -->
+    <filter id="water-3d-filter" x="-30%" y="-30%" width="160%" height="160%">
+      <feImage id="fe-image-1" result="rippleMap" />
+      
+      <!-- 1. 水面の屈折（揺れ） -->
+      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="40" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      
+      <!-- 2. 立体的な光（ライティング）と影の算出 -->
+      <feSpecularLighting in="rippleMap" surfaceScale="5" specularConstant="1.2" specularExponent="15" lighting-color="#ffffff" result="light">
+        <feDistantLight azimuth="135" elevation="45" /> <!-- 左上からの光 -->
+      </feSpecularLighting>
+      
+      <!-- 3. 光と画面要素をブレンド -->
+      <feComposite in="light" in2="displaced" operator="in" result="lightCut" />
+      <feBlend mode="screen" in="lightCut" in2="displaced" />
+    </filter>
+
+    <!-- 光のハイライト専用フィルター -->
+    <filter id="water-lighting-only" x="-30%" y="-30%" width="160%" height="160%">
+      <feImage id="fe-image-2" result="rippleMap" />
+      <feSpecularLighting in="rippleMap" surfaceScale="8" specularConstant="1.5" specularExponent="10" lighting-color="#e0f0ff">
+        <feDistantLight azimuth="135" elevation="40" />
+      </feSpecularLighting>
     </filter>
   </defs>
 </svg>
 
-<!-- 光の反射（光の波）レイヤー -->
-<div id="water-light-layer"></div>
+<!-- 表面の光沢レイヤー -->
+<div id="water-shading-layer"></div>
 
 <div class="container">
     
@@ -329,13 +345,14 @@
         }
     }
 
-    // --- 巨大な波紋が画面外までゆったり広がる物理シミュレーション ---
+    // --- 高低差（立体感）を持たせた物理波紋キャンバス ---
     const canvas = document.getElementById('ripple-canvas');
     const ctx = canvas.getContext('2d');
-    const feImage = document.getElementById('fe-image');
+    const feImage1 = document.getElementById('fe-image-1');
+    const feImage2 = document.getElementById('fe-image-2');
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth / 2; // 高解像度・広域対応
+        canvas.width = window.innerWidth / 2;
         canvas.height = window.innerHeight / 2;
     }
     resizeCanvas();
@@ -345,47 +362,51 @@
     let lastX = 0;
     let lastY = 0;
 
-    // 波紋オブジェクトのクラス
     class Ripple {
         constructor(x, y) {
             this.x = x / 2;
             this.y = y / 2;
             this.radius = 1;
-
-            // ★ 画面外まですっぽり届く巨大な半径に設定（画面幅・高さを基準に算出）
             const maxDimension = Math.max(canvas.width, canvas.height);
-            this.maxRadius = maxDimension * 1.5; 
-
-            this.speed = 3.5;    // 大きな波に合わせてゆったり素早く広がる
-            this.strength = 1.0; // 波の初期強度
+            this.maxRadius = maxDimension * 1.5;
+            this.speed = 3.5;
+            this.strength = 1.0;
         }
 
         update() {
             this.radius += this.speed;
-            // 画面外に伸びていくまで波がしっかり残るように減衰率をゆっくり調整
             this.strength = 1.0 - (this.radius / this.maxRadius);
         }
 
         draw(ctx) {
             if (this.strength <= 0) return;
 
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.lineWidth = 25; // 巨大な波紋に合わせて波の輪っかの厚みも太く
-            
+            // 立体感を生み出すドーナツ型のグラデーション（波の山と谷を描画）
+            const grad = ctx.createRadialGradient(
+                this.x, this.y, Math.max(0, this.radius - 20),
+                this.x, this.y, this.radius + 20
+            );
+
             const alpha = Math.max(0, this.strength);
-            ctx.strokeStyle = `rgba(128, 255, 128, ${alpha * 0.8})`;
-            ctx.stroke();
+            
+            // 凸面（山）と凹面（谷）の高低差を色で渡す
+            grad.addColorStop(0, `rgba(128, 128, 128, 0)`);
+            grad.addColorStop(0.3, `rgba(255, 200, 200, ${alpha * 0.9})`); // 盛り上がり
+            grad.addColorStop(0.7, `rgba(0, 100, 100, ${alpha * 0.9})`);  // 落ち込み
+            grad.addColorStop(1, `rgba(128, 128, 128, 0)`);
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius + 20, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
         }
     }
 
-    // マウスを動かした時、一定距離ごとに波紋を発生
     document.addEventListener('mousemove', (e) => {
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // 60ピクセル移動ごとに次の大波を起こす（波同士が重なりすぎないように間隔を広調整）
         if (dist > 60) {
             ripples.push(new Ripple(e.clientX, e.clientY));
             lastX = e.clientX;
@@ -393,14 +414,13 @@
         }
     });
 
-    // 画面クリック時にも大きな波紋を発火
     document.addEventListener('click', (e) => {
         ripples.push(new Ripple(e.clientX, e.clientY));
     });
 
-    // アニメーションメインループ
     function renderRipples() {
-        ctx.fillStyle = 'rgb(128, 128, 0)';
+        // 水平な水面（グレーベース）
+        ctx.fillStyle = 'rgb(128, 128, 128)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         for (let i = ripples.length - 1; i >= 0; i--) {
@@ -413,7 +433,10 @@
             }
         }
 
-        feImage.setAttribute('href', canvas.toDataURL());
+        const dataUrl = canvas.toDataURL();
+        feImage1.setAttribute('href', dataUrl);
+        feImage2.setAttribute('href', dataUrl);
+
         requestAnimationFrame(renderRipples);
     }
     renderRipples();
