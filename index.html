@@ -20,24 +20,12 @@
             text-align: center;
         }
 
-        /* --- 水面の膜（カーソルでの揺らぎ効果） --- */
-        #ripple-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none; /* 下の要素（ボタン等）の操作を妨げない */
-            z-index: 9999; /* 最前面に配置 */
-            
-            /* 動きに「ゆらり」としたラグ（遅れ）を持たせる設定 */
-            transition: transform 0.4s ease-out;
-            will-change: transform, background;
-        }
-
+        /* 画面全体をクリアなまま水の屈折で歪ませる指定 */
         .container {
             width: 100%;
             max-width: 600px;
+            filter: url('#water-distortion'); /* SVG水面フィルターを適用 */
+            will-change: transform;
         }
         
         .page-logo {
@@ -163,8 +151,15 @@
 </head>
 <body>
 
-<!-- 水面の膜（歪み用オーバーレイ） -->
-<div id="ripple-overlay"></div>
+<!-- 水面の屈折を生み出すSVGフィルター（非表示） -->
+<svg style="display:none;">
+  <defs>
+    <filter id="water-distortion">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" result="noise" id="turbulence" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" id="displacement" />
+    </filter>
+  </defs>
+</svg>
 
 <div class="container">
     
@@ -297,25 +292,43 @@
         }
     }
 
-    // --- カーソル移動による「水面のゆらぎ・光の歪み」効果 ---
-    const overlay = document.getElementById('ripple-overlay');
-
-    // 初期スタイルを動的に打ち消し・歪みが見えるグラデーションに上書き
-    overlay.style.backdropFilter = 'blur(2px) contrast(120%)';
-    overlay.style.background = 'radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%)';
+    // --- 指で水面を撫でたような「屈折・ゆらぎ」のスクリプト ---
+    const displacement = document.getElementById('displacement');
+    const turbulence = document.getElementById('turbulence');
+    
+    let targetScale = 0;
+    let currentScale = 0;
+    let lastX = 0;
+    let lastY = 0;
 
     document.addEventListener('mousemove', (e) => {
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
+        // カーソルが動いた速度（距離）を計算
+        const deltaX = e.clientX - lastX;
+        const deltaY = e.clientY - lastY;
+        const speed = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        // カーソル位置に合わせて光と歪みの中心をぬるっと動かす
-        overlay.style.background = `radial-gradient(circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 60%)`;
+        lastX = e.clientX;
+        lastY = e.clientY;
+
+        // カーソルを動かすと、その速さに応じて水面がグニャッと波立つ（最大強度の調整）
+        targetScale = Math.min(speed * 1.5, 25);
         
-        // 全体をわずかに逆方向にズラして「水面の膜」の立体感を出す
-        const relX = (mouseX / window.innerWidth) - 0.5;
-        const relY = (mouseY / window.innerHeight) - 0.5;
-        overlay.style.transform = `translate(${relX * -15}px, ${relY * -15}px)`;
+        // 波の形状の起点（動きに合わせて波紋の位置をズラす）
+        turbulence.setAttribute('baseFrequency', `${0.01 + (e.clientX / window.innerWidth) * 0.02}`);
     });
+
+    // ぬるっと水面が収まるアニメーションループ
+    function animateWater() {
+        // 慣性をつけてゆっくり波を鎮める処理
+        currentScale += (targetScale - currentScale) * 0.1;
+        displacement.setAttribute('scale', currentScale.toFixed(2));
+        
+        // 動かしていないときは徐々に波を消す（静かな水面に戻る）
+        targetScale *= 0.92;
+        
+        requestAnimationFrame(animateWater);
+    }
+    animateWater();
 </script>
 </body>
 </html>
