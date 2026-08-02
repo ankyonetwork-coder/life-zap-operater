@@ -19,6 +19,25 @@
             padding: 20px;
             text-align: center;
         }
+
+        /* --- 水面の膜（カーソルでの揺らぎ効果） --- */
+        #ripple-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none; /* 下の要素（ボタン等）の操作を妨げない */
+            z-index: 9999; /* 最前面に配置 */
+            
+            /* 歪みと少しの色調変化を与えるフィルター */
+            backdrop-filter: hue-rotate(5deg) brightness(1.05);
+            
+            /* 動きに「ゆらり」としたラグ（遅れ）を持たせる設定 */
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            will-change: transform;
+        }
+
         .container {
             width: 100%;
             max-width: 600px;
@@ -108,7 +127,7 @@
             font-size: 0.95rem;
         }
         
-        /* 見出し「concept」のスタイル（本文より大きく） */
+        /* 見出し「concept」のスタイル */
         .concept-heading {
             font-size: 1.5rem;
             font-weight: bold;
@@ -122,14 +141,13 @@
             margin: 0 0 15px 0;
         }
 
-        /* 最後の「暗渠Network」とGIF画像のスタイル */
+        /* 「暗渠Network」とGIF画像のスタイル */
         .signature-area {
             display: flex;
             align-items: center;
             justify-content: flex-end;
             margin-top: 30px;
             gap: 10px;
-            /* スマホ幅でも絶対に改行させない処理 */
             flex-wrap: nowrap;
             white-space: nowrap;
         }
@@ -147,6 +165,9 @@
     </style>
 </head>
 <body>
+
+<!-- 水面の膜（歪み用オーバーレイ） -->
+<div id="ripple-overlay"></div>
 
 <div class="container">
     
@@ -239,7 +260,6 @@
 
         try {
             let foundVideo = null;
-            // ★ ここを 6 から 1 に変更しました（ポイント節約） ★
             for (let attempts = 0; attempts < 1; attempts++) {
                 const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=${generateRandomQuery()}&type=video&order=date&key=${API_KEY}`);
                 if (!searchRes.ok) throw new Error("検索に失敗しました");
@@ -279,6 +299,24 @@
             btn.textContent = "next memories";
         }
     }
+
+    // --- カーソル移動による「水面のゆらぎ」効果の制御 ---
+    const overlay = document.getElementById('ripple-overlay');
+
+    document.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        // 画面中心からの相対位置を算出
+        const relX = (mouseX / window.innerWidth) - 0.5;
+        const relY = (mouseY / window.innerHeight) - 0.5;
+        
+        // 移動量の指定（-5の数値を大きくすると揺れ幅が大きくなります）
+        const translateX = relX * -5;
+        const translateY = relY * -5;
+        
+        overlay.style.transform = `translate(${translateX}px, ${translateY}px)`;
+    });
 </script>
 </body>
 </html>
