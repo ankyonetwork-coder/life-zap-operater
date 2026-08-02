@@ -29,7 +29,7 @@
             z-index: 1;
         }
 
-        /* フィルターから外したロゴ画像 */
+        /* ロゴ画像 */
         .page-logo {
             width: 250px;
             max-width: 100%;
@@ -47,20 +47,19 @@
             letter-spacing: 1px;
         }
 
-        /* 波紋屈折フィルターを適用するエリア（ズレ防止にマージン追加） */
+        /* 波紋屈折フィルターを適用するテキスト・ボタン等のエリア */
         .filtered-content {
             filter: url('#water-refraction-3d');
             will-change: filter;
-            padding: 10px 0;
         }
 
-        /* 動画プレイヤーの外枠 */
+        /* 動画プレイヤーの外枠（フィルターから除外して描画崩れを完全防止） */
         .video-wrapper {
             position: relative;
             width: 100%;
             padding-bottom: 56.25%; /* 16:9の比率 */
             background: #000;
-            margin-bottom: 20px;
+            margin: 20px 0;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -185,10 +184,9 @@
 
 <svg style="display:none;">
   <defs>
-    <!-- scaleの値を下げて破綻（断裂）を防止 -->
     <filter id="water-refraction-3d" x="-20%" y="-20%" width="140%" height="140%">
       <feImage id="fe-image" result="rippleMap" />
-      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="12" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="15" xChannelSelector="R" yChannelSelector="G" result="displaced" />
       <feSpecularLighting in="rippleMap" surfaceScale="2" specularConstant="0.5" specularExponent="10" lighting-color="#ffffff" result="light">
         <feDistantLight azimuth="135" elevation="60" />
       </feSpecularLighting>
@@ -200,19 +198,22 @@
 
 <div class="container">
     
-    <!-- ロゴ画像 -->
+    <!-- ロゴ画像（フィルター対象外） -->
     <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
     <div class="logo-tagline">暗渠ネットワークは、安全です。</div>
 
-    <!-- ここより下の要素に波紋フィルターを適用 -->
     <div class="filtered-content">
         <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
+    </div>
 
-        <div class="video-wrapper" id="player-container">
-            <div class="shield"></div>
-            <div id="player" class="w-full h-full"></div>
-        </div>
+    <!-- 動画枠（フィルター対象外に独立配置し、ズレを解消） -->
+    <div class="video-wrapper" id="player-container">
+        <div class="shield"></div>
+        <div id="player" class="w-full h-full"></div>
+    </div>
 
+    <!-- テキスト・ボタン類（フィルター適用エリア） -->
+    <div class="filtered-content">
         <div class="info-panel">
             <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
             <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
