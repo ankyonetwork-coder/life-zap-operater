@@ -30,12 +30,9 @@
             pointer-events: none; /* 下の要素（ボタン等）の操作を妨げない */
             z-index: 9999; /* 最前面に配置 */
             
-            /* 歪みと少しの色調変化を与えるフィルター */
-            backdrop-filter: hue-rotate(5deg) brightness(1.05);
-            
             /* 動きに「ゆらり」としたラグ（遅れ）を持たせる設定 */
-            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
-            will-change: transform;
+            transition: transform 0.4s ease-out;
+            will-change: transform, background;
         }
 
         .container {
@@ -300,22 +297,24 @@
         }
     }
 
-    // --- カーソル移動による「水面のゆらぎ」効果の制御 ---
+    // --- カーソル移動による「水面のゆらぎ・光の歪み」効果 ---
     const overlay = document.getElementById('ripple-overlay');
+
+    // 初期スタイルを動的に打ち消し・歪みが見えるグラデーションに上書き
+    overlay.style.backdropFilter = 'blur(2px) contrast(120%)';
+    overlay.style.background = 'radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%)';
 
     document.addEventListener('mousemove', (e) => {
         const mouseX = e.clientX;
         const mouseY = e.clientY;
         
-        // 画面中心からの相対位置を算出
+        // カーソル位置に合わせて光と歪みの中心をぬるっと動かす
+        overlay.style.background = `radial-gradient(circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 60%)`;
+        
+        // 全体をわずかに逆方向にズラして「水面の膜」の立体感を出す
         const relX = (mouseX / window.innerWidth) - 0.5;
         const relY = (mouseY / window.innerHeight) - 0.5;
-        
-        // 移動量の指定（-5の数値を大きくすると揺れ幅が大きくなります）
-        const translateX = relX * -5;
-        const translateY = relY * -5;
-        
-        overlay.style.transform = `translate(${translateX}px, ${translateY}px)`;
+        overlay.style.transform = `translate(${relX * -15}px, ${relY * -15}px)`;
     });
 </script>
 </body>
