@@ -25,7 +25,7 @@
         .container {
             width: 100%;
             max-width: 600px;
-            filter: url('#water-refraction-3d'); /* 屈折＋無色の光による立体フィルター */
+            filter: url('#water-refraction-3d'); /* 屈折＋立体光沢フィルター */
             will-change: filter;
             position: relative;
             z-index: 1;
@@ -167,23 +167,23 @@
 
 <canvas id="ripple-canvas"></canvas>
 
-<!-- 透明な水の屈折・立体光線を生み出すSVGフィルター -->
+<!-- 画面が欠けたりブレて二重になったりしないよう描画エリアを拡張＆シンプル化したSVGフィルター -->
 <svg style="display:none;">
   <defs>
-    <filter id="water-refraction-3d" x="-30%" y="-30%" width="160%" height="160%">
+    <filter id="water-refraction-3d" x="-50%" y="-50%" width="200%" height="200%">
       <feImage id="fe-image" result="rippleMap" />
       
-      <!-- 1. 波による物理的な「水面の像の歪み・屈折」 -->
-      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="40" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <!-- 波による水面の歪み（屈折） -->
+      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="30" xChannelSelector="R" yChannelSelector="G" result="displaced" />
       
-      <!-- 2. 波の勾配（凹凸）から「白熱した純粋な光の反射（ハイライト）」のみを生成（色は純白#ffffff） -->
-      <feSpecularLighting in="rippleMap" surfaceScale="6" specularConstant="1.2" specularExponent="20" lighting-color="#ffffff" result="light">
-        <feDistantLight azimuth="135" elevation="50" />
+      <!-- 波の山に当たる淡い白光のハイライト -->
+      <feSpecularLighting in="rippleMap" surfaceScale="3" specularConstant="0.8" specularExponent="15" lighting-color="#ffffff" result="light">
+        <feDistantLight azimuth="135" elevation="60" />
       </feSpecularLighting>
       
-      <!-- 3. 背景の邪魔にならないよう、光の反射だけを画面要素に合成（色は変えずに立体感のみを付加） -->
+      <!-- 歪んだ像の上に、光のハイライトだけを加算（画像が二重にならず自然に立体化） -->
       <feComposite in="light" in2="displaced" operator="in" result="lightCut" />
-      <feBlend mode="screen" in="lightCut" in2="displaced" />
+      <feComposite in="displaced" in2="lightCut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
     </filter>
   </defs>
 </svg>
@@ -319,7 +319,7 @@
         }
     }
 
-    // --- 完全透明な水面シミュレーション ---
+    // --- ゆったり広がる水面波紋シミュレーション ---
     const canvas = document.getElementById('ripple-canvas');
     const ctx = canvas.getContext('2d');
     const feImage = document.getElementById('fe-image');
@@ -342,7 +342,9 @@
             this.radius = 1;
             const maxDimension = Math.max(canvas.width, canvas.height);
             this.maxRadius = maxDimension * 1.5;
-            this.speed = 3.5;
+            
+            // ★ スピードを大幅に減速（3.5 → 1.0）
+            this.speed = 1.0; 
             this.strength = 1.0;
         }
 
@@ -354,14 +356,12 @@
         draw(ctx) {
             if (this.strength <= 0) return;
 
-            // 純粋なレンズ高低（モノクロの高度マップ）を描画
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.lineWidth = 25; // 輪っかの太さ
+            ctx.lineWidth = 35; // ゆったり広がる波に合わせて波幅を滑らかに調整
             
             const alpha = Math.max(0, this.strength);
-            // 赤/緑のチャネルにのみ正確なベクトル方向の数値を入れ、無駄な色の着色は一切排除
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
             ctx.stroke();
         }
     }
@@ -371,7 +371,8 @@
         const dy = e.clientY - lastY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist > 60) {
+        // マウスを70px移動させるごとにじわっと波紋を発生
+        if (dist > 70) {
             ripples.push(new Ripple(e.clientX, e.clientY));
             lastX = e.clientX;
             lastY = e.clientY;
@@ -383,7 +384,6 @@
     });
 
     function renderRipples() {
-        // キャンバスの背景をフラットな状態に初期化
         ctx.fillStyle = 'rgb(128, 128, 128)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
