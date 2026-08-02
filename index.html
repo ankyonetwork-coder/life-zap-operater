@@ -35,7 +35,16 @@
             width: 250px;
             max-width: 100%;
             height: auto;
+            margin-bottom: 10px; /* 少し縮める */
+        }
+
+        /* ロゴ下のテキストスタイル */
+        .logo-tagline {
+            font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
+            font-size: 1rem;
+            color: #ddd;
             margin-bottom: 20px;
+            letter-spacing: 1px;
         }
 
         /* 動画プレイヤーの外枠 */
@@ -106,11 +115,11 @@
             transform: none;
         }
 
-        /* 説明文パネルのスタイル */
+        /* 説明文パネルのスタイル（修正：行間を広げて重なりを解消） */
         .description-panel {
             margin-top: 10px;
             text-align: left;
-            line-height: 1.8;
+            line-height: 2.2; /* 明確に行間を広げる */
             color: #ddd;
             font-size: 0.95rem;
         }
@@ -191,216 +200,203 @@
 <div class="container">
     
     <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
-
-    <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
-
-    <div class="video-wrapper" id="player-container">
-        <div class="shield"></div>
-        <div id="player" class="w-full h-full"></div>
-    </div>
-
-    <div class="info-panel">
-        <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
-        <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
-    </div>
-
-    <button id="search-btn" onclick="findRandomVideo()">next life</button>
-    <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
-
-    <div class="description-panel">
-        <div class="concept-heading">ご案内</div>
-        
-        <p>
-            このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
-        </p>
-        <p>
-            それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
-        </p>
-        <p>
-            普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
-        </p>
-        <p>
-            車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
-        </p>
-
-        <div class="signature-area">
-            <span class="signature-text">暗渠Network</span>
-            <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
-        </div>
-    </div>
-
-</div>
-
-<script src="https://www.youtube.com/iframe_api"></script>
-<script>
-    // ★ ここに新しいAPIキーを入れてください ★
-    const API_KEY = 'AIzaSyCv2qvZ8xqY9EGBFs5nYCvLrnYso1bJLgo'; 
     
-    let player;
-    let isPlayerReady = false;
+    <!-- ロゴ下のテキスト追加 -->
+    <div class="logo-tagline">暗渠ネットワークは、安全です。この変なズレ（文字の重なり）をCSSで修正し、ボタンのテキストとロゴ下のメッセージを追加しました。
 
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            height: '100%',
-            width: '100%',
-            videoId: '',
-            playerVars: {
-                'autoplay': 1,
-                'controls': 0, // 操作バーを非表示
-                'disablekb': 1,
-                'modestbranding': 1,
-                'rel': 0,
-                'playsinline': 1
-            },
-            events: {
-                'onReady': () => isPlayerReady = true
-            }
-        });
-    }
+以下のコードを丸ごと `index.html` に上書きコミットしてください。
 
-    function generateRandomQuery() {
-        const prefixes = ['IMG', 'DSC', 'MVI', 'MOV', 'VID', 'SANY'];
-        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-        const num = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        return `${prefix}_${num}`;
-    }
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>life zap operater</title>
+    <style>
+        body {
+            /* インターネット黎明期を彷彿とさせるフォント */
+            font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            overflow-x: hidden;
+        }
 
-    async function findRandomVideo() {
-        const btn = document.getElementById('search-btn');
-        const msg = document.getElementById('error-msg');
+        /* 画面全体の透明な水面屈折コンテナ */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            filter: url('#water-refraction-3d'); /* 屈折＋立体光沢フィルター */
+            will-change: filter;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-logo {
+            width: 250px;
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px; /* 少し縮める */
+        }
+
+        /* ロゴ下のテキストスタイル */
+        .logo-tagline {
+            font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
+            font-size: 1rem;
+            color: #ddd;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* 動画プレイヤーの外枠 */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9の比率 */
+            background: #000;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .video-wrapper iframe, .video-wrapper #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* 絶対にYouTubeへ飛ばさない透明シールド */
+        .shield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .info-panel {
+            margin-bottom: 20px;
+        }
+
+        /* 立体的なガラス風ボタンのUI */
+        button {
+            background: linear-gradient(to bottom, #fdfdfd 0%, #e0e0e0 100%);
+            border: 1px solid #999;
+            border-radius: 25px;
+            color: #333;
+            padding: 10px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 1), 
+                0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #ffffff 0%, #ebebeb 100%);
+        }
+        button:active {
+            background: linear-gradient(to bottom, #d0d0d0 0%, #e8e8e8 100%);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+            border-color: #888;
+            transform: translateY(1px);
+        }
+        button:disabled {
+            background: #e6e6e6;
+            color: #aaa;
+            text-shadow: none;
+            box-shadow: none;
+            border-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 説明文パネルのスタイル（修正：行間を広げて重なりを解消） */
+        .description-panel {
+            margin-top: 10px;
+            text-align: left;
+            line-height: 2.2; /* 明確に行間を広げる */
+            color: #ddd;
+            font-size: 0.95rem;
+        }
         
-        btn.disabled = true;
-        btn.textContent = "Searching...";
-        msg.textContent = "";
-        
-        // 検索中はテキストをリセット
-        document.getElementById('video-title').textContent = "";
-        document.getElementById('video-stats').textContent = "";
-
-        try {
-            let foundVideo = null;
-            for (let attempts = 0; attempts < 1; attempts++) {
-                const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=${generateRandomQuery()}&type=video&order=date&key=${API_KEY}`);
-                if (!searchRes.ok) throw new Error("検索に失敗しました");
-                const searchData = await searchRes.json();
-                
-                if (!searchData.items || searchData.items.length === 0) continue;
-                
-                const videoIds = searchData.items.map(item => item.id.videoId).join(',');
-                const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,status,snippet&id=${videoIds}&key=${API_KEY}`);
-                const statsData = await statsRes.json();
-
-                const lowViewVideos = statsData.items.filter(item => {
-                    return item.statistics && item.status && parseInt(item.statistics.viewCount) < 100 && item.status.embeddable;
-                });
-
-                if (lowViewVideos.length > 0) {
-                    foundVideo = lowViewVideos[Math.floor(Math.random() * lowViewVideos.length)];
-                    break;
-                }
-            }
-
-            if (foundVideo) {
-                document.getElementById('video-title').textContent = foundVideo.snippet.title;
-                document.getElementById('video-stats').textContent = `再生回数: ${foundVideo.statistics.viewCount} 回`;
-                
-                if (isPlayerReady) {
-                    player.loadVideoById(foundVideo.id);
-                }
-            } else {
-                msg.textContent = "記憶が見つかりませんでした。";
-            }
-        } catch (error) {
-            msg.textContent = `他人の記憶の見過ぎは危険です。自分の人生を見つめましょう。`;
-            console.error(error);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "next memories";
-        }
-    }
-
-    // --- ゆったり広がる水面波紋シミュレーション ---
-    const canvas = document.getElementById('ripple-canvas');
-    const ctx = canvas.getContext('2d');
-    const feImage = document.getElementById('fe-image');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth / 2;
-        canvas.height = window.innerHeight / 2;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    let ripples = [];
-    let lastX = 0;
-    let lastY = 0;
-
-    class Ripple {
-        constructor(x, y) {
-            this.x = x / 2;
-            this.y = y / 2;
-            this.radius = 1;
-            const maxDimension = Math.max(canvas.width, canvas.height);
-            this.maxRadius = maxDimension * 1.5;
-            
-            // ★ スピードを大幅に減速（3.5 → 1.0）
-            this.speed = 1.0; 
-            this.strength = 1.0;
+        /* 見出し「concept」のスタイル */
+        .concept-heading {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 2px;
         }
 
-        update() {
-            this.radius += this.speed;
-            this.strength = 1.0 - (this.radius / this.maxRadius);
+        .description-panel p {
+            margin: 0 0 15px 0;
         }
 
-        draw(ctx) {
-            if (this.strength <= 0) return;
-
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.lineWidth = 35; // ゆったり広がる波に合わせて波幅を滑らかに調整
-            
-            const alpha = Math.max(0, this.strength);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
-            ctx.stroke();
+        /* 「暗渠Network」とGIF画像のスタイル */
+        .signature-area {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 30px;
+            gap: 10px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
         }
-    }
-
-    document.addEventListener('mousemove', (e) => {
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        // マウスを70px移動させるごとにじわっと波紋を発生
-        if (dist > 70) {
-            ripples.push(new Ripple(e.clientX, e.clientY));
-            lastX = e.clientX;
-            lastY = e.clientY;
+        .signature-text {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
         }
-    });
-
-    document.addEventListener('click', (e) => {
-        ripples.push(new Ripple(e.clientX, e.clientY));
-    });
-
-    function renderRipples() {
-        ctx.fillStyle = 'rgb(128, 128, 128)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = ripples.length - 1; i >= 0; i--) {
-            const r = ripples[i];
-            r.update();
-            r.draw(ctx);
-
-            if (r.strength <= 0) {
-                ripples.splice(i, 1);
-            }
+        .signature-gif {
+            height: 12em; 
+            width: auto;
+            max-width: 50vw; 
+            object-fit: contain;
         }
 
-        feImage.setAttribute('href', canvas.toDataURL());
-        requestAnimationFrame(renderRipples);
-    }
-    renderRipples();
-</script>
-</body>
-</html>
+        /* 波紋シミュレーション用非表示キャンバス */
+        #ripple-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="ripple-canvas"></canvas>
+
+<!-- 画面が欠けたりブレて二重になったりしないよう描画エリアを拡張＆シンプル化したSVGフィルター -->
+<svg style="display:none;">
+  <defs>
+    <filter id="water-refraction-3d" x="-50%" y="-50%" width="200%" height="200%">
+      <feImage id="fe-image" result="rippleMap" />
+      
+      <!-- 波による水面の歪み（屈折） -->
+      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="30" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      
+      <!-- 波の山に当たる淡い白光のハイライト -->
+      <feSpecularLighting in="rippleMap" surfaceScale="3" specularConstant="0.8" specularExponent="15" lighting-color="#ffffff" result="light">
+        <feDistantLight azimuth="135" elevation="60" />
+      </feSpecularLighting>
+      
+      <!-- 歪んだ像の上に、光のハイライト
