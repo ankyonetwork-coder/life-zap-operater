@@ -47,13 +47,14 @@
             letter-spacing: 1px;
         }
 
-        /* 波紋屈折フィルターを適用するテキスト・ボタン等のエリア */
-        .filtered-content {
-            filter: url('#water-refraction-3d');
-            will-change: filter;
+        /* メインタイトル */
+        .site-title {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
         }
 
-        /* 動画プレイヤーの外枠（フィルターから除外して描画崩れを完全防止） */
+        /* 動画プレイヤーの外枠 */
         .video-wrapper {
             position: relative;
             width: 100%;
@@ -165,83 +166,52 @@
             max-width: 50vw; 
             object-fit: contain;
         }
-
-        /* 波紋シミュレーション用非表示キャンバス */
-        #ripple-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            display: none;
-        }
     </style>
 </head>
 <body>
 
-<canvas id="ripple-canvas"></canvas>
-
-<svg style="display:none;">
-  <defs>
-    <filter id="water-refraction-3d" x="-20%" y="-20%" width="140%" height="140%">
-      <feImage id="fe-image" result="rippleMap" />
-      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="15" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-      <feSpecularLighting in="rippleMap" surfaceScale="2" specularConstant="0.5" specularExponent="10" lighting-color="#ffffff" result="light">
-        <feDistantLight azimuth="135" elevation="60" />
-      </feSpecularLighting>
-      <feComposite in="light" in2="displaced" operator="in" result="lightCut" />
-      <feComposite in="displaced" in2="lightCut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
-    </filter>
-  </defs>
-</svg>
-
 <div class="container">
     
-    <!-- ロゴ画像（フィルター対象外） -->
+    <!-- ロゴ画像 -->
     <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
     <div class="logo-tagline">暗渠ネットワークは、安全です。</div>
 
-    <div class="filtered-content">
-        <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
-    </div>
+    <h1 class="site-title">life zap operater</h1>
 
-    <!-- 動画枠（フィルター対象外に独立配置し、ズレを解消） -->
+    <!-- 動画枠 -->
     <div class="video-wrapper" id="player-container">
         <div class="shield"></div>
         <div id="player" class="w-full h-full"></div>
     </div>
 
-    <!-- テキスト・ボタン類（フィルター適用エリア） -->
-    <div class="filtered-content">
-        <div class="info-panel">
-            <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
-            <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
-        </div>
+    <!-- 情報パネル＆ボタン -->
+    <div class="info-panel">
+        <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
+        <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
+    </div>
 
-        <button id="search-btn" onclick="findRandomVideo()">next memories</button>
-        <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
+    <button id="search-btn" onclick="findRandomVideo()">next memories</button>
+    <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
 
-        <div class="description-panel">
-            <div class="concept-heading">ご案内</div>
-            
-            <p>
-                このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
-            </p>
-            <p>
-                それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
-            </p>
-            <p>
-                普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
-            </p>
-            <p>
-                車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
-            </p>
+    <div class="description-panel">
+        <div class="concept-heading">ご案内</div>
+        
+        <p>
+            このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
+        </p>
+        <p>
+            それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
+        </p>
+        <p>
+            普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
+        </p>
+        <p>
+            車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
+        </p>
 
-            <div class="signature-area">
-                <span class="signature-text">暗渠Network</span>
-                <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
-            </div>
+        <div class="signature-area">
+            <span class="signature-text">暗渠Network</span>
+            <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
         </div>
     </div>
 
@@ -333,87 +303,6 @@
             btn.textContent = "next memories";
         }
     }
-
-    // --- ゆったり広がる水面波紋シミュレーション ---
-    const canvas = document.getElementById('ripple-canvas');
-    const ctx = canvas.getContext('2d');
-    const feImage = document.getElementById('fe-image');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth / 2;
-        canvas.height = window.innerHeight / 2;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    let ripples = [];
-    let lastX = 0;
-    let lastY = 0;
-
-    class Ripple {
-        constructor(x, y) {
-            this.x = x / 2;
-            this.y = y / 2;
-            this.radius = 1;
-            const maxDimension = Math.max(canvas.width, canvas.height);
-            this.maxRadius = maxDimension * 1.5;
-            
-            this.speed = 1.0; 
-            this.strength = 1.0;
-        }
-
-        update() {
-            this.radius += this.speed;
-            this.strength = 1.0 - (this.radius / this.maxRadius);
-        }
-
-        draw(ctx) {
-            if (this.strength <= 0) return;
-
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.lineWidth = 20; 
-            
-            const alpha = Math.max(0, this.strength);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
-            ctx.stroke();
-        }
-    }
-
-    document.addEventListener('mousemove', (e) => {
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist > 70) {
-            ripples.push(new Ripple(e.clientX, e.clientY));
-            lastX = e.clientX;
-            lastY = e.clientY;
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        ripples.push(new Ripple(e.clientX, e.clientY));
-    });
-
-    function renderRipples() {
-        ctx.fillStyle = 'rgb(128, 128, 128)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = ripples.length - 1; i >= 0; i--) {
-            const r = ripples[i];
-            r.update();
-            r.draw(ctx);
-
-            if (r.strength <= 0) {
-                ripples.splice(i, 1);
-            }
-        }
-
-        feImage.setAttribute('href', canvas.toDataURL());
-        requestAnimationFrame(renderRipples);
-    }
-    renderRipples();
 </script>
 </body>
 </html>
