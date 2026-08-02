@@ -18,16 +18,34 @@
             margin: 0;
             padding: 20px;
             text-align: center;
+            overflow-x: hidden;
         }
 
-        /* 画面全体をクリアなまま水の屈折で歪ませる指定 */
+        /* 画面全体をクリアなまま大きな水面の屈折で歪ませる */
         .container {
             width: 100%;
             max-width: 600px;
             filter: url('#water-distortion'); /* SVG水面フィルターを適用 */
             will-change: transform;
+            position: relative;
+            z-index: 1;
         }
         
+        /* 水面の「光の屈折・ハイライト」効果用オーバーレイ */
+        #water-caustics {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            mix-blend-mode: overlay; /* 背景と自然に混ざり合う光の合成モード */
+            will-change: background, opacity;
+        }
+
         .page-logo {
             width: 250px;
             max-width: 100%;
@@ -151,11 +169,15 @@
 </head>
 <body>
 
-<!-- 水面の屈折を生み出すSVGフィルター（非表示） -->
+<!-- 水面の光の屈折用レイヤー -->
+<div id="water-caustics"></div>
+
+<!-- 大きなうねり・波紋を生み出すSVGフィルター -->
 <svg style="display:none;">
   <defs>
-    <filter id="water-distortion">
-      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" result="noise" id="turbulence" />
+    <filter id="water-distortion" x="-10%" y="-10%" width="120%" height="120%">
+      <!-- baseFrequencyを小さな値(0.003)にして大きな丸い波にする -->
+      <feTurbulence type="turbulence" baseFrequency="0.003" numOctaves="2" result="noise" id="turbulence" />
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" id="displacement" />
     </filter>
   </defs>
@@ -292,17 +314,18 @@
         }
     }
 
-    // --- 指で水面を撫でたような「屈折・ゆらぎ」のスクリプト ---
+    // --- ゆったりとした大きな波紋と光の屈折ロジック ---
     const displacement = document.getElementById('displacement');
     const turbulence = document.getElementById('turbulence');
+    const caustics = document.getElementById('water-caustics');
     
     let targetScale = 0;
     let currentScale = 0;
     let lastX = 0;
     let lastY = 0;
+    let waveTime = 0;
 
     document.addEventListener('mousemove', (e) => {
-        // カーソルが動いた速度（距離）を計算
         const deltaX = e.clientX - lastX;
         const deltaY = e.clientY - lastY;
         const speed = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -310,21 +333,33 @@
         lastX = e.clientX;
         lastY = e.clientY;
 
-        // カーソルを動かすと、その速さに応じて水面がグニャッと波立つ（最大強度の調整）
-        targetScale = Math.min(speed * 1.5, 25);
+        // 大きなゆったりとしたうねりにするため強度をマイルドに調整
+        targetScale = Math.min(speed * 1.8, 35);
         
-        // 波の形状の起点（動きに合わせて波紋の位置をズラす）
-        turbulence.setAttribute('baseFrequency', `${0.01 + (e.clientX / window.innerWidth) * 0.02}`);
+        // 移動時に光の屈折（レンズ状のハイライト）を指の周りに発生させる
+        caustics.style.opacity = Math.min(speed / 15, 0.6);
+        caustics.style.background = `radial-gradient(circle 180px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.25) 0%, rgba(200,230,255,0.08) 50%, transparent 100%)`;
     });
 
-    // ぬるっと水面が収まるアニメーションループ
+    // ぬるりと大きな波が広がって鎮まるループ処理
     function animateWater() {
-        // 慣性をつけてゆっくり波を鎮める処理
-        currentScale += (targetScale - currentScale) * 0.1;
+        waveTime += 0.005; // 水面がゆっくり動き続けるための時間軸
+        
+        // 慣性を大きくして「ぬるっと」戻る重量感を出す (0.05)
+        currentScale += (targetScale - currentScale) * 0.05;
         displacement.setAttribute('scale', currentScale.toFixed(2));
         
-        // 動かしていないときは徐々に波を消す（静かな水面に戻る）
-        targetScale *= 0.92;
+        // 時間経過で波の形をじんわり動かす（大きな波が生きているような演出）
+        turbulence.setAttribute('baseFrequency', `${0.003 + Math.sin(waveTime) * 0.0005}`);
+
+        // 動かしていないときは徐々に光と波を収束させる
+        targetScale *= 0.95;
+        
+        // 光の屈折を徐々に消す
+        let currentOpacity = parseFloat(caustics.style.opacity) || 0;
+        if (currentOpacity > 0) {
+            caustics.style.opacity = (currentOpacity * 0.93).toFixed(3);
+        }
         
         requestAnimationFrame(animateWater);
     }
