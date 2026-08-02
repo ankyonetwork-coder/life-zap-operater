@@ -29,21 +29,27 @@
             will-change: filter;
             position: relative;
             z-index: 1;
+            padding-top: 30px; /* 波紋による最上部の削れを防止 */
         }
 
+        /* ロゴ画像（上部に余白を持たせて波紋の欠けを防止） */
         .page-logo {
             width: 250px;
             max-width: 100%;
             height: auto;
+            margin-top: 10px;
             margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        /* ロゴ下のテキストスタイル */
+        /* ロゴ直下のテキスト */
         .logo-tagline {
             font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
             font-size: 1rem;
             color: #ddd;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             letter-spacing: 1px;
         }
 
@@ -115,7 +121,7 @@
             transform: none;
         }
 
-        /* 説明文パネル（段落と行間を確保） */
+        /* 説明文パネル */
         .description-panel {
             margin-top: 10px;
             text-align: left;
@@ -192,8 +198,10 @@
 
 <div class="container">
     
+    <!-- ロゴ画像 -->
     <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
     
+    <!-- ロゴのすぐ一行下のテキスト -->
     <div class="logo-tagline">暗渠ネットワークは、安全です。</div>
 
     <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
