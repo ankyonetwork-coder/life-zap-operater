@@ -16,41 +16,41 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px 20px 20px;
             text-align: center;
             overflow-x: hidden;
         }
 
-        /* 画面全体の透明な水面屈折コンテナ */
+        /* 全体コンテナ */
         .container {
             width: 100%;
             max-width: 600px;
-            filter: url('#water-refraction-3d');
-            will-change: filter;
             position: relative;
             z-index: 1;
-            padding-top: 30px; /* 波紋による最上部の削れを防止 */
         }
 
-        /* ロゴ画像（上部に余白を持たせて波紋の欠けを防止） */
+        /* フィルターから外したロゴ画像（切れを物理的に防止） */
         .page-logo {
             width: 250px;
             max-width: 100%;
             height: auto;
-            margin-top: 10px;
-            margin-bottom: 10px;
+            margin: 0 auto 2px auto; /* 下の文字と極力近づける */
             display: block;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        /* ロゴ直下のテキスト */
+        /* ロゴ直下のテキスト（ロゴに近接配置） */
         .logo-tagline {
             font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #ddd;
-            margin-bottom: 25px;
+            margin: 0 0 25px 0;
             letter-spacing: 1px;
+        }
+
+        /* 波紋屈折フィルターを適用するエリア（ロゴ以外） */
+        .filtered-content {
+            filter: url('#water-refraction-3d');
+            will-change: filter;
         }
 
         /* 動画プレイヤーの外枠 */
@@ -198,46 +198,47 @@
 
 <div class="container">
     
-    <!-- ロゴ画像 -->
+    <!-- 波紋フィルターの外に配置したロゴ（絶対に切れない） -->
     <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
-    
-    <!-- ロゴのすぐ一行下のテキスト -->
     <div class="logo-tagline">暗渠ネットワークは、安全です。</div>
 
-    <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
+    <!-- ここより下の要素のみに波紋フィルターを適用 -->
+    <div class="filtered-content">
+        <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
 
-    <div class="video-wrapper" id="player-container">
-        <div class="shield"></div>
-        <div id="player" class="w-full h-full"></div>
-    </div>
+        <div class="video-wrapper" id="player-container">
+            <div class="shield"></div>
+            <div id="player" class="w-full h-full"></div>
+        </div>
 
-    <div class="info-panel">
-        <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
-        <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
-    </div>
+        <div class="info-panel">
+            <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
+            <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
+        </div>
 
-    <button id="search-btn" onclick="findRandomVideo()">next memories</button>
-    <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
+        <button id="search-btn" onclick="findRandomVideo()">next memories</button>
+        <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
 
-    <div class="description-panel">
-        <div class="concept-heading">ご案内</div>
-        
-        <p>
-            このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
-        </p>
-        <p>
-            それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
-        </p>
-        <p>
-            普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
-        </p>
-        <p>
-            車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
-        </p>
+        <div class="description-panel">
+            <div class="concept-heading">ご案内</div>
+            
+            <p>
+                このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
+            </p>
+            <p>
+                それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
+            </p>
+            <p>
+                普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
+            </p>
+            <p>
+                車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
+            </p>
 
-        <div class="signature-area">
-            <span class="signature-text">暗渠Network</span>
-            <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
+            <div class="signature-area">
+                <span class="signature-text">暗渠Network</span>
+                <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
+            </div>
         </div>
     </div>
 
