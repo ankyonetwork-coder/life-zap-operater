@@ -399,4 +399,228 @@
         <feDistantLight azimuth="135" elevation="60" />
       </feSpecularLighting>
       
-      <!-- 歪んだ像の上に、光のハイライト
+      <!-- 歪んだ像の上に、光のハイライトだけを加算（画像が二重にならず自然に立体化） -->
+      <feComposite in="light" in2="displaced" operator="in" result="lightCut" />
+      <feComposite in="displaced" in2="lightCut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  </defs>
+</svg>
+
+<div class="container">
+    
+    <img src="new_rogowhite.png" alt="サイトロゴ" class="page-logo">
+    
+    <!-- ロゴ下のテキスト追加 -->
+    <div class="logo-tagline">暗渠ネットワークは、安全です。</div>
+
+    <h1 style="margin-bottom: 20px; font-size: 1.2rem;">life zap operater</h1>
+
+    <div class="video-wrapper" id="player-container">
+        <div class="shield"></div>
+        <div id="player" class="w-full h-full"></div>
+    </div>
+
+    <div class="info-panel">
+        <div id="video-title" style="font-weight:bold; font-size:1.1rem;"></div>
+        <div id="video-stats" style="color: #aaa; margin-top: 5px; font-size: 0.9rem;"></div>
+    </div>
+
+    <!-- 再生ボタンのテキスト変更（next memories） -->
+    <button id="search-btn" onclick="findRandomVideo()">next memories</button>
+    <div id="error-msg" style="color: #ff6b6b; margin-bottom: 15px;"></div>
+
+    <div class="description-panel">
+        <div class="concept-heading">ご案内</div>
+        
+        <p>
+            このサイトは、再生数100回以下というフィルターを通して、インターネットの奥に埋もれた何気ない風景と出会うことができる場所です。
+        </p>
+        <p>
+            それらを眺めていると、知らない誰かの人生を覗いているようでありながら、なぜか自分の記憶にも触れているような感覚になります。ホームビデオを見返すときのような、説明のつかない懐かしさや温かさがそこにはあります。
+        </p>
+        <p>
+            普段のインターネットでは、強い感情や刺激的な出来事ばかりが切り取られ、拡散されます。しかしこの場所にあるのは、そうした「見せるための瞬間」ではなく、ただ人が生きている時間の断片です。
+        </p>
+        <p>
+            車窓から流れる景色を眺めるように、ひとつの動画はすぐに通り過ぎていきます。そのため一度見た記憶を巻き戻したり、停止したりすることはできません。けれど、その一瞬のなかに人の存在や生活の気配が確かに残っています。
+        </p>
+
+        <div class="signature-area">
+            <span class="signature-text">暗渠Network</span>
+            <img src="ankyochan.gif" alt="暗渠Networkロゴ" class="signature-gif">
+        </div>
+    </div>
+
+</div>
+
+<script src="[https://www.youtube.com/iframe_api](https://www.youtube.com/iframe_api)"></script>
+<script>
+    // ★ ここに新しいAPIキーを入れてください ★
+    const API_KEY = 'AIzaSyCv2qvZ8xqY9EGBFs5nYCvLrnYso1bJLgo'; 
+    
+    let player;
+    let isPlayerReady = false;
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: '',
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0, // 操作バーを非表示
+                'disablekb': 1,
+                'modestbranding': 1,
+                'rel': 0,
+                'playsinline': 1
+            },
+            events: {
+                'onReady': () => isPlayerReady = true
+            }
+        });
+    }
+
+    function generateRandomQuery() {
+        const prefixes = ['IMG', 'DSC', 'MVI', 'MOV', 'VID', 'SANY'];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const num = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        return `${prefix}_${num}`;
+    }
+
+    async function findRandomVideo() {
+        const btn = document.getElementById('search-btn');
+        const msg = document.getElementById('error-msg');
+        
+        btn.disabled = true;
+        btn.textContent = "Searching...";
+        msg.textContent = "";
+        
+        // 検索中はテキストをリセット
+        document.getElementById('video-title').textContent = "";
+        document.getElementById('video-stats').textContent = "";
+
+        try {
+            let foundVideo = null;
+            for (let attempts = 0; attempts < 1; attempts++) {
+                const searchRes = await fetch(`[https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=$](https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=50&q=$){generateRandomQuery()}&type=video&order=date&key=${API_KEY}`);
+                if (!searchRes.ok) throw new Error("検索に失敗しました");
+                const searchData = await searchRes.json();
+                
+                if (!searchData.items || searchData.items.length === 0) continue;
+                
+                const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+                const statsRes = await fetch(`[https://www.googleapis.com/youtube/v3/videos?part=statistics,status,snippet&id=$](https://www.googleapis.com/youtube/v3/videos?part=statistics,status,snippet&id=$){videoIds}&key=${API_KEY}`);
+                const statsData = await statsRes.json();
+
+                const lowViewVideos = statsData.items.filter(item => {
+                    return item.statistics && item.status && parseInt(item.statistics.viewCount) < 100 && item.status.embeddable;
+                });
+
+                if (lowViewVideos.length > 0) {
+                    foundVideo = lowViewVideos[Math.floor(Math.random() * lowViewVideos.length)];
+                    break;
+                }
+            }
+
+            if (foundVideo) {
+                document.getElementById('video-title').textContent = foundVideo.snippet.title;
+                document.getElementById('video-stats').textContent = `再生回数: ${foundVideo.statistics.viewCount} 回`;
+                
+                if (isPlayerReady) {
+                    player.loadVideoById(foundVideo.id);
+                }
+            } else {
+                msg.textContent = "記憶が見つかりませんでした。";
+            }
+        } catch (error) {
+            msg.textContent = `他人の記憶の見過ぎは危険です。自分の人生を見つめましょう。`;
+            console.error(error);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "next memories"; // 検索完了後のボタンテキスト
+        }
+    }
+
+    // --- ゆったり広がる水面波紋シミュレーション ---
+    const canvas = document.getElementById('ripple-canvas');
+    const ctx = canvas.getContext('2d');
+    const feImage = document.getElementById('fe-image');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth / 2;
+        canvas.height = window.innerHeight / 2;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let ripples = [];
+    let lastX = 0;
+    let lastY = 0;
+
+    class Ripple {
+        constructor(x, y) {
+            this.x = x / 2;
+            this.y = y / 2;
+            this.radius = 1;
+            const maxDimension = Math.max(canvas.width, canvas.height);
+            this.maxRadius = maxDimension * 1.5;
+            
+            this.speed = 1.0; 
+            this.strength = 1.0;
+        }
+
+        update() {
+            this.radius += this.speed;
+            this.strength = 1.0 - (this.radius / this.maxRadius);
+        }
+
+        draw(ctx) {
+            if (this.strength <= 0) return;
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.lineWidth = 35; // ゆったり広がる波に合わせて波幅を滑らかに調整
+            
+            const alpha = Math.max(0, this.strength);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+            ctx.stroke();
+        }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 70) {
+            ripples.push(new Ripple(e.clientX, e.clientY));
+            lastX = e.clientX;
+            lastY = e.clientY;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        ripples.push(new Ripple(e.clientX, e.clientY));
+    });
+
+    function renderRipples() {
+        ctx.fillStyle = 'rgb(128, 128, 128)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            r.update();
+            r.draw(ctx);
+
+            if (r.strength <= 0) {
+                ripples.splice(i, 1);
+            }
+        }
+
+        feImage.setAttribute('href', canvas.toDataURL());
+        requestAnimationFrame(renderRipples);
+    }
+    renderRipples();
+</script>
+</body>
+</html>
