@@ -186,11 +186,11 @@
 <!-- 波紋を水面の歪み・波として反映させるSVGフィルター -->
 <svg style="display:none;">
   <defs>
-    <filter id="water-ripple-filter" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="water-ripple-filter" x="-30%" y="-30%" width="160%" height="160%">
       <!-- キャンバスの波紋画像を元に水面をゆがめる -->
       <feImage id="fe-image" result="rippleMap" />
-      <!-- 水面のうねりと屈折（大きな輪っかの波） -->
-      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="25" xChannelSelector="R" yChannelSelector="G" />
+      <!-- 水面のうねりと屈折（巨大な波紋に対応） -->
+      <feDisplacementMap in="SourceGraphic" in2="rippleMap" scale="35" xChannelSelector="R" yChannelSelector="G" />
     </filter>
   </defs>
 </svg>
@@ -329,13 +329,13 @@
         }
     }
 
-    // --- 石を落としたように波紋（大きな円）が広がる物理シミュレーション ---
+    // --- 巨大な波紋が画面外までゆったり広がる物理シミュレーション ---
     const canvas = document.getElementById('ripple-canvas');
     const ctx = canvas.getContext('2d');
     const feImage = document.getElementById('fe-image');
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth / 2; // パフォーマンス確保のため解像度調整
+        canvas.width = window.innerWidth / 2; // 高解像度・広域対応
         canvas.height = window.innerHeight / 2;
     }
     resizeCanvas();
@@ -350,59 +350,59 @@
         constructor(x, y) {
             this.x = x / 2;
             this.y = y / 2;
-            this.radius = 1;      // 波紋の初期半径
-            this.maxRadius = 180; // 円がどこまで大きく広がるか
-            this.speed = 2.5;     // 円が広がる速さ（ゆったり広がる）
-            this.strength = 1.0;  // 波の強さ
+            this.radius = 1;
+
+            // ★ 画面外まですっぽり届く巨大な半径に設定（画面幅・高さを基準に算出）
+            const maxDimension = Math.max(canvas.width, canvas.height);
+            this.maxRadius = maxDimension * 1.5; 
+
+            this.speed = 3.5;    // 大きな波に合わせてゆったり素早く広がる
+            this.strength = 1.0; // 波の初期強度
         }
 
         update() {
             this.radius += this.speed;
-            // 広がるにつれて波紋の強さが弱まり消える
+            // 画面外に伸びていくまで波がしっかり残るように減衰率をゆっくり調整
             this.strength = 1.0 - (this.radius / this.maxRadius);
         }
 
         draw(ctx) {
             if (this.strength <= 0) return;
 
-            // 波紋の「環（円）」をグラデーションで描画
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.lineWidth = 15; // 波の幅
+            ctx.lineWidth = 25; // 巨大な波紋に合わせて波の輪っかの厚みも太く
             
-            // 赤と緑のチャンネルを使ってSVGのDisplacementMap（歪み方向）を制御
             const alpha = Math.max(0, this.strength);
-            ctx.strokeStyle = `rgba(128, 255, 128, ${alpha * 0.7})`;
+            ctx.strokeStyle = `rgba(128, 255, 128, ${alpha * 0.8})`;
             ctx.stroke();
         }
     }
 
-    // マウスを動かした時、一定距離移動するごとに「波紋（石を落とした円）」を発生
+    // マウスを動かした時、一定距離ごとに波紋を発生
     document.addEventListener('mousemove', (e) => {
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // 40ピクセル以上動いたときだけ新たな波紋を落とす（細かすぎる揺れを防止）
-        if (dist > 40) {
+        // 60ピクセル移動ごとに次の大波を起こす（波同士が重なりすぎないように間隔を広調整）
+        if (dist > 60) {
             ripples.push(new Ripple(e.clientX, e.clientY));
             lastX = e.clientX;
             lastY = e.clientY;
         }
     });
 
-    // 画面クリック時にも波紋を大きく発火
+    // 画面クリック時にも大きな波紋を発火
     document.addEventListener('click', (e) => {
         ripples.push(new Ripple(e.clientX, e.clientY));
     });
 
     // アニメーションメインループ
     function renderRipples() {
-        // キャンバスを中立色（歪みなしの状態）でリセット
         ctx.fillStyle = 'rgb(128, 128, 0)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // すべての波紋を更新＆描画
         for (let i = ripples.length - 1; i >= 0; i--) {
             const r = ripples[i];
             r.update();
@@ -413,9 +413,7 @@
             }
         }
 
-        // キャンバスの内容をSVGフィルターのマップとしてセット
         feImage.setAttribute('href', canvas.toDataURL());
-
         requestAnimationFrame(renderRipples);
     }
     renderRipples();
