@@ -19,6 +19,7 @@
             padding: 40px 20px 20px 20px;
             text-align: center;
             overflow-x: hidden;
+            position: relative;
         }
 
         /* 全体コンテナ */
@@ -26,7 +27,7 @@
             width: 100%;
             max-width: 600px;
             position: relative;
-            z-index: 1;
+            z-index: 2; /* 波紋の上に表示 */
         }
 
         /* ロゴ画像 */
@@ -166,9 +167,24 @@
             max-width: 50vw; 
             object-fit: contain;
         }
+
+        /* 波紋エフェクト用キャンバス（全画面・文字の背後に配置） */
+        #ripple-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.35; /* 波紋の濃さを調整 */
+        }
     </style>
 </head>
 <body>
+
+<!-- 背景波紋レイヤー -->
+<canvas id="ripple-canvas"></canvas>
 
 <div class="container">
     
@@ -303,6 +319,88 @@
             btn.textContent = "next memories";
         }
     }
+
+    // --- 背景波紋エフェクト描画処理 ---
+    const canvas = document.getElementById('ripple-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let ripples = [];
+    let lastX = 0;
+    let lastY = 0;
+
+    class Ripple {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 1;
+            this.maxRadius = Math.max(canvas.width, canvas.height) * 0.4;
+            this.speed = 2.5;
+            this.alpha = 0.8;
+        }
+
+        update() {
+            this.radius += this.speed;
+            this.alpha = 0.8 * (1 - this.radius / this.maxRadius);
+        }
+
+        draw(ctx) {
+            if (this.alpha <= 0) return;
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.stroke();
+
+            // 内側の二重波紋
+            if (this.radius > 15) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius - 12, 0, Math.PI * 2);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.5})`;
+                ctx.stroke();
+            }
+        }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 60) {
+            ripples.push(new Ripple(e.clientX, e.clientY));
+            lastX = e.clientX;
+            lastY = e.clientY;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        ripples.push(new Ripple(e.clientX, e.clientY));
+    });
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            r.update();
+            r.draw(ctx);
+
+            if (r.alpha <= 0) {
+                ripples.splice(i, 1);
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
 </script>
 </body>
 </html>
