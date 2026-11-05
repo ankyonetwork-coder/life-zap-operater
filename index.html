@@ -457,9 +457,10 @@
     }
     animate();
     
-// ==========================================
+
+// =================================
 // PHOTO DATA MOSH
-// ==========================================
+// =================================
 
 const glitchCanvas = document.getElementById("glitch-canvas");
 const glitchCtx = glitchCanvas.getContext("2d");
@@ -467,185 +468,282 @@ const glitchCtx = glitchCanvas.getContext("2d");
 const glitchImage = new Image();
 glitchImage.src = "sunset-background.JPG";
 
-let gw, gh, dpr;
-let scale, offsetX, offsetY;
+// 低解像度画像を作るキャンバス
+const moshCanvas = document.createElement("canvas");
+const moshCtx = moshCanvas.getContext("2d");
 
+let moshW, moshH;
 let glitches = [];
-let nextGlitch = 100;
+let nextGlitch = 0;
 
+// 画質設定
+const CAMERA_QUALITY = 0.58;
+
+// 画面サイズ調整
 function resizeGlitch() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    gw = window.innerWidth;
-    gh = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
-    glitchCanvas.width = gw * dpr;
-    glitchCanvas.height = gh * dpr;
+    moshW = window.innerWidth;
+    moshH = window.innerHeight;
+
+    glitchCanvas.width = moshW * dpr;
+    glitchCanvas.height = moshH * dpr;
+
+    glitchCanvas.style.width = moshW + "px";
+    glitchCanvas.style.height = moshH + "px";
 
     glitchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    glitchCtx.imageSmoothingEnabled = false;
 
-    if (glitchImage.complete && glitchImage.naturalWidth) {
-        scale = Math.max(
-            gw / glitchImage.naturalWidth,
-            gh / glitchImage.naturalHeight
-        );
+    moshCanvas.width = Math.max(1, Math.floor(moshW * CAMERA_QUALITY));
+    moshCanvas.height = Math.max(1, Math.floor(moshH * CAMERA_QUALITY));
 
-        offsetX = (gw - glitchImage.naturalWidth * scale) / 2;
-        offsetY = (gh - glitchImage.naturalHeight * scale) / 2;
-    }
+    drawBaseImage();
 }
 
-glitchImage.onload = resizeGlitch;
-window.addEventListener("resize", resizeGlitch);
-resizeGlitch();
+// 元画像を低解像度で描画
+function drawBaseImage() {
 
-
-// 新しい破損を発生させる
-function createGlitch() {
-    const w = 60 + Math.random() * 260;
-    const h = 20 + Math.random() * 130;
-
-    glitches.push({
-        x: Math.random() * Math.max(1, gw - w),
-        y: Math.random() * Math.max(1, gh - h),
-        w: w,
-        h: h,
-        age: 0,
-        duration: 240 + Math.random() * 300,
-        shift: (Math.random() - 0.5) * 100,
-        intensity: 0.5 + Math.random() * 0.5,
-        blocks: 3 + Math.floor(Math.random() * 9)
-    });
-}
-
-
-// 写真の一部分を切り取って別の場所に描画
-function copyImageSlice(sx, sy, sw, sh, dx, dy, dw, dh) {
     if (!glitchImage.complete || !glitchImage.naturalWidth) return;
 
-    const ix = (sx - offsetX) / scale;
-    const iy = (sy - offsetY) / scale;
+    const w = moshCanvas.width;
+    const h = moshCanvas.height;
 
-    const iw = sw / scale;
-    const ih = sh / scale;
+    const scale = Math.max(
+        w / glitchImage.naturalWidth,
+        h / glitchImage.naturalHeight
+    );
 
-    if (
-        ix < 0 || iy < 0 ||
-        ix + iw > glitchImage.naturalWidth ||
-        iy + ih > glitchImage.naturalHeight
-    ) return;
+    const sw = w / scale;
+    const sh = h / scale;
 
-    glitchCtx.drawImage(
+    const sx = (glitchImage.naturalWidth - sw) / 2;
+    const sy = (glitchImage.naturalHeight - sh) / 2;
+
+    moshCtx.clearRect(0, 0, w, h);
+
+    moshCtx.imageSmoothingEnabled = true;
+
+    moshCtx.drawImage(
         glitchImage,
-        ix, iy, iw, ih,
-        dx, dy, dw, dh
+        sx, sy, sw, sh,
+        0, 0, w, h
     );
 }
 
+// ランダムなグリッチを発生
+function createGlitch() {
+
+    const direction = Math.floor(Math.random() * 3);
+
+    let w, h;
+
+    if (direction === 0) {
+        // 横方向
+        w = 40 + Math.random() * 300;
+        h = 3 + Math.random() * 22;
+
+    } else if (direction === 1) {
+        // 縦方向
+        w = 3 + Math.random() * 22;
+        h = 40 + Math.random() * 260;
+
+    } else {
+        // 斜め方向
+        w = 30 + Math.random() * 180;
+        h = 15 + Math.random() * 100;
+    }
+
+    glitches.push({
+
+        x: Math.random() * moshW,
+        y: Math.random() * moshH,
+
+        w: w,
+        h: h,
+
+        angle: direction === 2
+            ? (Math.random() - 0.5) * 1.2
+            : 0,
+
+        shiftX: (Math.random() - 0.5) * 100,
+        shiftY: (Math.random() - 0.5) * 100,
+
+        life: 0,
+        duration: 3 + Math.random() * 12,
+
+        strength: 0.4 + Math.random() * 0.6
+    });
+}
+
+// グリッチの描画
+function drawGlitch(g) {
+
+    const x = g.x;
+    const y = g.y;
+    const w = g.w;
+    const h = g.h;
+
+    const cx = x;
+    const cy = y;
+
+    const sx = Math.max(
+        0,
+        Math.min(moshCanvas.width - 1,
+        (x / moshW) * moshCanvas.width)
+    );
+
+    const sy = Math.max(
+        0,
+        Math.min(moshCanvas.height - 1,
+        (y / moshH) * moshCanvas.height)
+    );
+
+    const sw = Math.min(
+        moshCanvas.width - sx,
+        (w / moshW) * moshCanvas.width
+    );
+
+    const sh = Math.min(
+        moshCanvas.height - sy,
+        (h / moshH) * moshCanvas.height
+    );
+
+    if (sw <= 0 || sh <= 0) return;
+
+    glitchCtx.save();
+
+    glitchCtx.translate(cx, cy);
+    glitchCtx.rotate(g.angle);
+
+    glitchCtx.beginPath();
+    glitchCtx.rect(-w / 2, -h / 2, w, h);
+    glitchCtx.clip();
+
+    // ピクセル状の画像断片を移動
+    glitchCtx.imageSmoothingEnabled = false;
+
+    glitchCtx.drawImage(
+        moshCanvas,
+        sx, sy, sw, sh,
+        -w / 2 + g.shiftX,
+        -h / 2 + g.shiftY,
+        w, h
+    );
+
+    // 色ずれ
+    glitchCtx.globalAlpha = 0.18 * g.strength;
+
+    glitchCtx.fillStyle = "#ff284f";
+    glitchCtx.fillRect(
+        -w / 2 + g.shiftX + 4,
+        -h / 2,
+        w,
+        h
+    );
+
+    glitchCtx.fillStyle = "#00d9ff";
+    glitchCtx.fillRect(
+        -w / 2 + g.shiftX - 4,
+        -h / 2,
+        w,
+        h
+    );
+
+    glitchCtx.restore();
+
+    glitchCtx.globalAlpha = 1;
+}
+
+// 古いビデオカメラ風のノイズ
+function drawCameraNoise() {
+
+    glitchCtx.save();
+
+    // 走査線
+    glitchCtx.globalAlpha = 0.10;
+    glitchCtx.fillStyle = "#000";
+
+    for (let y = 0; y < moshH; y += 4) {
+        glitchCtx.fillRect(0, y, moshW, 1);
+    }
+
+    // 微細なノイズ
+    glitchCtx.globalAlpha = 0.08;
+
+    for (let i = 0; i < 100; i++) {
+
+        const x = Math.random() * moshW;
+        const y = Math.random() * moshH;
+
+        glitchCtx.fillStyle =
+            Math.random() > 0.5 ? "#fff" : "#000";
+
+        glitchCtx.fillRect(x, y, 2, 2);
+    }
+
+    glitchCtx.restore();
+}
 
 // メインアニメーション
-function animateGlitch() {
-    glitchCtx.clearRect(0, 0, gw, gh);
+function animateGlitch(time) {
 
-    if (glitchImage.complete && glitchImage.naturalWidth) {
-        nextGlitch--;
+    requestAnimationFrame(animateGlitch);
 
-        // 不規則なタイミングで新しい破損を発生
-        if (nextGlitch <= 0) {
+    if (!glitchImage.complete || !glitchImage.naturalWidth) {
+        return;
+    }
+
+    // 元画像を常に表示
+    glitchCtx.clearRect(0, 0, moshW, moshH);
+
+    glitchCtx.imageSmoothingEnabled = true;
+
+    glitchCtx.drawImage(
+        moshCanvas,
+        0, 0,
+        moshW, moshH
+    );
+
+    // 不規則なタイミングでグリッチを発生
+    if (time > nextGlitch) {
+
+        const count = 1 + Math.floor(Math.random() * 4);
+
+        for (let i = 0; i < count; i++) {
             createGlitch();
-
-            if (Math.random() > 0.7) {
-                createGlitch();
-            }
-
-            nextGlitch = 40 + Math.random() * 100;
         }
 
-        for (let index = glitches.length - 1; index >= 0; index--) {
-            const g = glitches[index];
+        nextGlitch = time + 100 + Math.random() * 450;
+    }
 
-            g.age++;
+    // 発生中のグリッチを描画
+    for (let i = glitches.length - 1; i >= 0; i--) {
 
-            const progress = g.age / g.duration;
+        const g = glitches[i];
 
-            // ゆっくり出現して、ゆっくり消える
-            const fade = Math.min(
-                1,
-                progress * 5,
-                (1 - progress) * 5
-            );
+        drawGlitch(g);
 
-            const strength = fade * g.intensity;
+        g.life++;
 
-            if (strength > 0) {
-                glitchCtx.save();
-                glitchCtx.globalAlpha = strength;
-
-                // 横方向の画像のズレ
-                for (let i = 0; i < g.blocks; i++) {
-                    const sy = g.y + Math.random() * g.h;
-                    const sh = 2 + Math.random() * 14;
-
-                    const shift = g.shift * (0.3 + Math.random());
-
-                    copyImageSlice(
-                        g.x, sy, g.w, sh,
-                        g.x + shift, sy, g.w, sh
-                    );
-                }
-
-                // ブロック状の画像破損
-                if (Math.random() > 0.35) {
-                    const bx = g.x + Math.random() * g.w;
-                    const by = g.y + Math.random() * g.h;
-
-                    const bw = 15 + Math.random() * 100;
-                    const bh = 5 + Math.random() * 30;
-
-                    copyImageSlice(
-                        bx, by, bw, bh,
-                        bx + (Math.random() - 0.5) * 45,
-                        by + (Math.random() - 0.5) * 12,
-                        bw * (0.7 + Math.random() * 0.8),
-                        bh
-                    );
-                }
-
-                // RGBの色ずれ
-                if (Math.random() > 0.8) {
-                    glitchCtx.fillStyle =
-                        `rgba(255, 40, 70, ${strength * 0.25})`;
-
-                    glitchCtx.fillRect(
-                        g.x,
-                        g.y + Math.random() * g.h,
-                        g.w,
-                        3 + Math.random() * 8
-                    );
-
-                    glitchCtx.fillStyle =
-                        `rgba(30, 210, 255, ${strength * 0.2})`;
-
-                    glitchCtx.fillRect(
-                        g.x + 10,
-                        g.y + Math.random() * g.h,
-                        g.w * 0.6,
-                        2 + Math.random() * 6
-                    );
-                }
-
-                glitchCtx.restore();
-            }
-
-            if (g.age >= g.duration) {
-                glitches.splice(index, 1);
-            }
+        if (g.life >= g.duration) {
+            glitches.splice(i, 1);
         }
     }
 
-    requestAnimationFrame(animateGlitch);
+    drawCameraNoise();
 }
+
+// 初期化
+glitchImage.onload = function() {
+
+    resizeGlitch();
+
+    requestAnimationFrame(animateGlitch);
+};
+
+window.addEventListener("resize", resizeGlitch);
+
 
 animateGlitch();
 
