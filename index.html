@@ -9,6 +9,11 @@
             /* インターネット黎明期を彷彿とさせるフォント */
             font-family: "ＭＳ Ｐゴシック", "MS PGothic", "Osaka", sans-serif;
             background-color: #1a1a1a;
+　　　　　　　　background-image: url("sunset-background.jpg");
+　　　　　　　　background-size: cover;
+　　　　　　　　background-position: center center;
+　　　　　　　　background-repeat: no-repeat;
+　　　　　　　　background-attachment: fixed;
             color: #fff;
             display: flex;
             flex-direction: column;
@@ -189,12 +194,24 @@
             z-index: 1;
             opacity: 0.35;
         }
-    </style>
+   /* データモッシュ用レイヤー */
+#glitch-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 1;
+} 
+</style>
 </head>
 <body>
 
 <!-- 背景波紋レイヤー -->
 <canvas id="ripple-canvas"></canvas>
+    <canvas id="glitch-canvas"></canvas>
 
 <div class="container">
     
@@ -439,6 +456,199 @@
         requestAnimationFrame(animate);
     }
     animate();
+    
+// ==========================================
+// PHOTO DATA MOSH
+// ==========================================
+
+const glitchCanvas = document.getElementById("glitch-canvas");
+const glitchCtx = glitchCanvas.getContext("2d");
+
+const glitchImage = new Image();
+glitchImage.src = "sunset-background.JPG";
+
+let gw, gh, dpr;
+let scale, offsetX, offsetY;
+
+let glitches = [];
+let nextGlitch = 100;
+
+function resizeGlitch() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    gw = window.innerWidth;
+    gh = window.innerHeight;
+
+    glitchCanvas.width = gw * dpr;
+    glitchCanvas.height = gh * dpr;
+
+    glitchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    glitchCtx.imageSmoothingEnabled = false;
+
+    if (glitchImage.complete && glitchImage.naturalWidth) {
+        scale = Math.max(
+            gw / glitchImage.naturalWidth,
+            gh / glitchImage.naturalHeight
+        );
+
+        offsetX = (gw - glitchImage.naturalWidth * scale) / 2;
+        offsetY = (gh - glitchImage.naturalHeight * scale) / 2;
+    }
+}
+
+glitchImage.onload = resizeGlitch;
+window.addEventListener("resize", resizeGlitch);
+resizeGlitch();
+
+
+// 新しい破損を発生させる
+function createGlitch() {
+    const w = 60 + Math.random() * 260;
+    const h = 20 + Math.random() * 130;
+
+    glitches.push({
+        x: Math.random() * Math.max(1, gw - w),
+        y: Math.random() * Math.max(1, gh - h),
+        w: w,
+        h: h,
+        age: 0,
+        duration: 240 + Math.random() * 300,
+        shift: (Math.random() - 0.5) * 100,
+        intensity: 0.5 + Math.random() * 0.5,
+        blocks: 3 + Math.floor(Math.random() * 9)
+    });
+}
+
+
+// 写真の一部分を切り取って別の場所に描画
+function copyImageSlice(sx, sy, sw, sh, dx, dy, dw, dh) {
+    if (!glitchImage.complete || !glitchImage.naturalWidth) return;
+
+    const ix = (sx - offsetX) / scale;
+    const iy = (sy - offsetY) / scale;
+
+    const iw = sw / scale;
+    const ih = sh / scale;
+
+    if (
+        ix < 0 || iy < 0 ||
+        ix + iw > glitchImage.naturalWidth ||
+        iy + ih > glitchImage.naturalHeight
+    ) return;
+
+    glitchCtx.drawImage(
+        glitchImage,
+        ix, iy, iw, ih,
+        dx, dy, dw, dh
+    );
+}
+
+
+// メインアニメーション
+function animateGlitch() {
+    glitchCtx.clearRect(0, 0, gw, gh);
+
+    if (glitchImage.complete && glitchImage.naturalWidth) {
+        nextGlitch--;
+
+        // 不規則なタイミングで新しい破損を発生
+        if (nextGlitch <= 0) {
+            createGlitch();
+
+            if (Math.random() > 0.7) {
+                createGlitch();
+            }
+
+            nextGlitch = 40 + Math.random() * 100;
+        }
+
+        for (let index = glitches.length - 1; index >= 0; index--) {
+            const g = glitches[index];
+
+            g.age++;
+
+            const progress = g.age / g.duration;
+
+            // ゆっくり出現して、ゆっくり消える
+            const fade = Math.min(
+                1,
+                progress * 5,
+                (1 - progress) * 5
+            );
+
+            const strength = fade * g.intensity;
+
+            if (strength > 0) {
+                glitchCtx.save();
+                glitchCtx.globalAlpha = strength;
+
+                // 横方向の画像のズレ
+                for (let i = 0; i < g.blocks; i++) {
+                    const sy = g.y + Math.random() * g.h;
+                    const sh = 2 + Math.random() * 14;
+
+                    const shift = g.shift * (0.3 + Math.random());
+
+                    copyImageSlice(
+                        g.x, sy, g.w, sh,
+                        g.x + shift, sy, g.w, sh
+                    );
+                }
+
+                // ブロック状の画像破損
+                if (Math.random() > 0.35) {
+                    const bx = g.x + Math.random() * g.w;
+                    const by = g.y + Math.random() * g.h;
+
+                    const bw = 15 + Math.random() * 100;
+                    const bh = 5 + Math.random() * 30;
+
+                    copyImageSlice(
+                        bx, by, bw, bh,
+                        bx + (Math.random() - 0.5) * 45,
+                        by + (Math.random() - 0.5) * 12,
+                        bw * (0.7 + Math.random() * 0.8),
+                        bh
+                    );
+                }
+
+                // RGBの色ずれ
+                if (Math.random() > 0.8) {
+                    glitchCtx.fillStyle =
+                        `rgba(255, 40, 70, ${strength * 0.25})`;
+
+                    glitchCtx.fillRect(
+                        g.x,
+                        g.y + Math.random() * g.h,
+                        g.w,
+                        3 + Math.random() * 8
+                    );
+
+                    glitchCtx.fillStyle =
+                        `rgba(30, 210, 255, ${strength * 0.2})`;
+
+                    glitchCtx.fillRect(
+                        g.x + 10,
+                        g.y + Math.random() * g.h,
+                        g.w * 0.6,
+                        2 + Math.random() * 6
+                    );
+                }
+
+                glitchCtx.restore();
+            }
+
+            if (g.age >= g.duration) {
+                glitches.splice(index, 1);
+            }
+        }
+    }
+
+    requestAnimationFrame(animateGlitch);
+}
+
+animateGlitch();
+
 </script>
 </body>
 </html>
